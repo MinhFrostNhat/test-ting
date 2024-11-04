@@ -1,57 +1,97 @@
-"use client"
+"use client";
 
-import React, {useEffect, useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import axios from "axios";
+import './page.css';
+import { useImmer } from "use-immer";
+import DataRow from "../components/DataRow";
 
-// * Import CSS file, you can use CSS module if you want
-// ! Change your CSS inside this file
-import './page.css'
-
-interface Kols {
-	KolID: number;
-	UserProfileID: number;
-	Language: string;
-	Education: string;
-	ExpectedSalary: number;
-	ExpectedSalaryEnable: boolean;
-	ChannelSettingTypeID: number;
-	IDFrontURL: string;
-	IDBackURL: string;
-	PortraitURL: string;
-	RewardID: number;
-	PaymentMethodID: number;
-	TestimonialsID: number;
-	VerificationStatus: boolean;
-	Enabled: boolean;
-	ActiveDate: Date;
-	Active: boolean;
-	CreatedBy: string;
-	CreatedDate: Date;
-	ModifiedBy: string;
-	ModifiedDate: Date;
-	IsRemove: boolean;
-	IsOnBoarding: boolean;
-	Code: string;
-	PortraitRightURL: string;
-	PortraitLeftURL: string;
-	LivenessStatus: boolean;
+export interface Kol {
+	kolID: number;
+	userProfileID: number;
+	language: string;
+	education: string;
+	expectedSalary: number;
+	expectedSalaryEnable: boolean;
+	channelSettingTypeID: number;
+	idFrontURL: string;
+	idBackURL: string;
+	portraitURL: string;
+	rewardID: number;
+	paymentMethodID: number;
+	testimonialsID: number;
+	verificationStatus: boolean;
+	enabled: boolean;
+	activeDate: Date;
+	active: boolean;
+	createdBy: string;
+	createdDate: Date;
+	modifiedBy: string;
+	modifiedDate: Date;
+	isRemove: boolean;
+	isOnBoarding: boolean;
+	code: string;
+	portraitRightURL: string;
+	portraitLeftURL: string;
+	livenessStatus: boolean;
 }
 
+// Create an Axios instance with a base URL
+const api = axios.create({
+	baseURL: "http://localhost:8081/api/v1/"
+});
+
 const Page = () => {
-    // * Use useState to store Kols from API 
-    // ! (if you have more optimized way to store data, PLEASE FEELS FREE TO CHANGE)
-	const [Kols , setKols] = useState<Kols[]>([]);  
+	const [kols, setKols] = useState<Kol[]>([]);
+	const [pagination, updatePagination] = useImmer({
+		pageIndex: 1,
+		pageSize: 15
+	});
+	const kolRef = useRef<HTMLDivElement>(null);
 
-    // * Fetch API over here 
-    // * Use useEffect to fetch data from API 
-    useEffect(() => {
+	useEffect(() => {
+		const fetchKols = async () => {
+			try {
+				const res = await api.get<{ kol: Kol[] }>("kols", {
+					params: pagination
+				});
+				setKols(res.data.kol);
+			} catch (error) {
+				console.error("Error fetching KOL data:", error);
+			}
+		};
 
-    }, []);
+		fetchKols();
+	}, [pagination]);
 
-    return (
-        <>
-            <h1 className='header'>Implement component over here</h1>
-        </>
-    )
+	const scrollKols = useCallback((scrollOffset: number) => {
+		kolRef.current?.scrollBy({
+			top: scrollOffset,
+			behavior: 'smooth' // Optional: adds smooth scrolling
+		});
+	}, []);
+
+	return (
+		<>
+			<h1 className='header'>Implement component </h1>
+			<div style={{ position: 'relative', maxHeight: '100vh', overflow: "hidden" }}>
+				<div style={{ width: '100%', height: 50, position: "absolute", display: "flex", justifyContent: "space-between" }}>
+					<button onClick={() => scrollKols(-1512)} className="scroll-button left">
+						Scroll Up
+					</button>
+					<button onClick={() => scrollKols(1512)} className="scroll-button right">
+						Scroll Down
+					</button>
+				</div>
+				<div style={{ maxHeight: '100vh', overflow: "scroll" }} ref={kolRef} id="kolsContainer">
+					{kols.map(kol => (
+						<DataRow key={kol.kolID} kol={kol} />
+					))}
+				</div>
+			</div>
+		</>
+	);
 };
+
 
 export default Page;

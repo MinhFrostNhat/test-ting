@@ -1,9 +1,10 @@
 package main
 
 import (
+	"github.com/gin-contrib/cors"
 	"log"
-	"wan-api-kol-event/Controllers"
 	"wan-api-kol-event/Initializers"
+	"wan-api-kol-event/registry"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +17,11 @@ func init() {
 func main() {
 	r := gin.Default()
 
-	// Define your Gin routes here
-	r.GET("/kols", Controllers.GetKolsController)
+	// Config CORS
+	r.Use(cors.Default())
+
+	// Define routes
+	registry.RegisterRoutes(r)
 
 	// Run Gin server
 	if err := r.Run(":8081"); err != nil {

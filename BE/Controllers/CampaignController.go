@@ -2,6 +2,7 @@ package Controllers
 
 import (
 	"net/http"
+	"strconv"
 	"wan-api-kol-event/Const"
 	"wan-api-kol-event/Logic"
 	"wan-api-kol-event/ViewModels"
@@ -22,12 +23,30 @@ func GetKolsController(context *gin.Context) {
 
 	// * Perform Logic Here
 	// ! Pass the parameters to the Logic Layer
-	kols, error := Logic.GetKolLogic()
+
+	// Get parameters from the request
+	pageIndexStr := context.Query("pageIndex")
+	pageSizeStr := context.Query("pageSize")
+
+	// Convert parameters to integers and validate
+	pageIndex, err := strconv.ParseInt(pageIndexStr, 10, 64)
+	if err != nil || pageIndex < 1 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pageIndex"})
+		return
+	}
+
+	pageSize, err := strconv.ParseInt(pageSizeStr, 10, 64)
+	if err != nil || pageSize < 1 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pageSize"})
+		return
+	}
+
+	kols, error := Logic.GetKolLogic(pageIndex, pageSize)
 	if error != nil {
 		KolsVM.Result = Const.UnSuccess
-		KolsVM.ErrorMessage = error.Error()
-		KolsVM.PageIndex = 1 // * change this to the actual page index from the request
-		KolsVM.PageSize = 10 // * change this to the actual page size from the request
+		KolsVM.ErrorMessage = err.Error()
+		KolsVM.PageIndex = pageIndex
+		KolsVM.PageSize = pageSize
 		KolsVM.Guid = guid
 		context.JSON(http.StatusInternalServerError, KolsVM)
 		return
@@ -37,10 +56,18 @@ func GetKolsController(context *gin.Context) {
 	// ? If the logic is successful, return the response with HTTP Status OK (200)
 	KolsVM.Result = Const.Success
 	KolsVM.ErrorMessage = ""
-	KolsVM.PageIndex = 1 // * change this to the actual page index from the request
-	KolsVM.PageSize = 10 // * change this to the actual page size from the request
+	KolsVM.PageIndex = pageIndex
+	KolsVM.PageSize = pageSize
 	KolsVM.Guid = guid
 	KolsVM.KOL = kols
 	KolsVM.TotalCount = int64(len(kols))
 	context.JSON(http.StatusOK, KolsVM)
+}
+
+// for create dummy data only
+func InsertKolsController(context *gin.Context) {
+	_ = Logic.GenerateDummyKOLs(100)
+	context.JSON(http.StatusOK, map[string]string{
+		"Status": "Insert data into db success",
+	})
 }
