@@ -11,3 +11,4 @@ swagger/*
 .idea
 
 FE/node_modules
+FE/.next
